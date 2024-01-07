@@ -1,0 +1,22 @@
+[tool.pyright]
+include = ["src"]
+exclude = [
+    "**/__pycache__",
+]
+defineConstant = {}
+stubPath = "stubs"
+
+reportMissingImports = true
+reportMissingTypeStubs = false
+
+pythonVersion = "3.12"
+pythonPlatform = "Linux"
+
+[tool.ruff]
+
+# Same as Black.
+line-length = 100
+indent-width = 4
+
+target-version = "py312"
+select = ["W", "E", "F", "I", "N", "ANN", "BLE", "B", "A", "T20", "PYI", "RET"]
