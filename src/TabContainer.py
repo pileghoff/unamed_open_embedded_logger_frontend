@@ -1,9 +1,15 @@
-
 from typing import Self
 
 from loguru import logger
 from PySide6.QtCore import QMargins, QMimeData, QObject, QRect, Qt, Slot
-from PySide6.QtGui import QColor, QDrag, QDragEnterEvent, QDropEvent, QMouseEvent, QPainter, QFocusEvent
+from PySide6.QtGui import (
+    QColor,
+    QDrag,
+    QDragEnterEvent,
+    QDropEvent,
+    QMouseEvent,
+    QPainter,
+)
 from PySide6.QtWidgets import (
     QApplication,
     QLineEdit,
@@ -17,7 +23,7 @@ from utils import has_focus
 
 
 class TabWidget(QTabWidget):
-    def __init__(self: Self, parent: QWidget | None=None) -> None:
+    def __init__(self: Self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.setTabBar(TabContainerBar(self))
         self.setTabsClosable(True)
@@ -40,7 +46,7 @@ class TabWidget(QTabWidget):
     def dropEvent(self: Self, event: QDropEvent) -> None:  # noqa: N802
         event.acceptProposedAction()
 
-    def active_tab_changed(self: Self, new_active:int) -> None:
+    def active_tab_changed(self: Self, new_active: int) -> None:
         def hide_child_sidebar(widget: QWidget) -> None:
             for child in widget.children():
                 if hasattr(child, "hide_sidebar") and callable(child.hide_sidebar):
@@ -52,7 +58,7 @@ class TabWidget(QTabWidget):
 
 
 class TabContainer(QSplitter):
-    def __init__(self: Self, parent: QObject| None=None) -> None:  # noqa: F821
+    def __init__(self: Self, parent: QObject | None = None) -> None:  # noqa: F821
         super().__init__(parent)
         self.setAcceptDrops(True)
         self.highlight_area: QRubberBand | None = None
@@ -63,7 +69,7 @@ class TabContainer(QSplitter):
     def set_active_child(self: Self, child: TabWidget) -> None:
         logger.info("Set active child")
         if self.active_child == child:
-            return 
+            return
         self.active_child = child
         for c in self.children():
             c.setPalette(QColor.fromRgb(100, 100, 100, 0))
@@ -91,9 +97,7 @@ class TabContainer(QSplitter):
 
         pos = event.pos()
         if self.highlight_area is None:
-            self.highlight_area = QRubberBand(
-                QRubberBand.Shape.Rectangle, self.parent()
-            )
+            self.highlight_area = QRubberBand(QRubberBand.Shape.Rectangle, self.parent())
 
         for i in range(self.count()):
             handle = self.handle(i)
@@ -193,7 +197,6 @@ class TabContainer(QSplitter):
         self.set_all_tabs_same_width()
 
     def addTab(self: Self, widget: QWidget, text: str) -> None:  # noqa: N802
-
         for c in self.children():
             if isinstance(c, TabWidget):
                 if has_focus(c):
@@ -204,7 +207,7 @@ class TabContainer(QSplitter):
 
 
 class TabContainerBar(QTabBar):
-    def __init__(self: Self, parent: QObject | None =None) -> None:
+    def __init__(self: Self, parent: QObject | None = None) -> None:
         super().__init__(parent)
         self.tabBarDoubleClicked.connect(self.rename_tab)
         self.tab_text_editing_index = None
@@ -212,7 +215,7 @@ class TabContainerBar(QTabBar):
         self.tab_text_editor.editingFinished.connect(self.rename_tab_done)
 
     @Slot(int)
-    def rename_tab(self:Self, index: int) -> None:
+    def rename_tab(self: Self, index: int) -> None:
         if self.tab_text_editing_index is not None:
             self.rename_tab_done()
         self.tab_text_editing_index = index
@@ -223,11 +226,9 @@ class TabContainerBar(QTabBar):
 
     @Slot()
     def rename_tab_done(self: Self) -> None:
-        assert(self.tab_text_editing_index is not None)
+        assert self.tab_text_editing_index is not None
         self.setTabText(self.tab_text_editing_index, self.tab_text_editor.text())
-        self.setTabButton(
-            self.tab_text_editing_index, QTabBar.ButtonPosition.LeftSide, None
-        )
+        self.setTabButton(self.tab_text_editing_index, QTabBar.ButtonPosition.LeftSide, None)
         self.tab_text_editing_index = None
         self.parent().setFocus()
 
@@ -260,6 +261,3 @@ class TabContainerBar(QTabBar):
         drag.setHotSpot(event.position().toPoint())
 
         drag.exec(Qt.MoveAction)
-
-
-

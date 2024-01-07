@@ -1,3 +1,5 @@
+from typing import Self
+
 import qtawesome as qta
 from PySide6.QtCore import QSize, Signal, Slot
 from PySide6.QtWidgets import (
@@ -15,7 +17,7 @@ from PySide6.QtWidgets import (
 class FilterWidget(QWidget):
     filter_updated = Signal(list)
 
-    def __init__(self, filter_items, name):
+    def __init__(self: Self, filter_items: list[int], name: str) -> None:
         super().__init__()
         self.layout = QVBoxLayout(self)
         self.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
@@ -28,7 +30,6 @@ class FilterWidget(QWidget):
 
         # List
         self.item_list_widget = QListWidget()
-        self.item_list_widget.keyboardSearch
         self.item_list_widget.itemClicked.connect(self.toggle_item)
         self.layout.addWidget(self.item_list_widget)
 
@@ -51,33 +52,33 @@ class FilterWidget(QWidget):
 
         self.update_items()
 
-    def sizeHint(self):
+    def sizeHint(self: Self) -> QSize:  # noqa: N802
         return QSize(300, 300)
 
     @Slot(str)
-    def filter_list(self, search: str):
+    def filter_list(self: Self, search: str) -> None:
         for i in range(0, self.item_list_widget.count()):
             item = self.item_list_widget.item(i)
             item.setHidden(search not in item.text())
 
     @Slot(bool)
-    def select_all(self, checked: bool):
+    def select_all(self: Self, checked: bool) -> None:
         for i in self.filter_items:
             self.filter_items[i] = True
         self.update_items()
 
     @Slot(bool)
-    def deselect_all(self, checked: bool):
+    def deselect_all(self: Self, checked: bool) -> None:
         for i in self.filter_items:
             self.filter_items[i] = False
         self.update_items()
 
     @Slot(QListWidgetItem)
-    def toggle_item(self, item: QListWidgetItem):
+    def toggle_item(self: Self, item: QListWidgetItem) -> None:
         self.filter_items[item.text()] = not self.filter_items[item.text()]
         self.update_items()
 
-    def update_items(self):
+    def update_items(self: Self) -> None:
         for i in range(0, self.item_list_widget.count()):
             item = self.item_list_widget.item(i)
             if self.filter_items[item.text()]:
@@ -87,7 +88,7 @@ class FilterWidget(QWidget):
             item.setIcon(icon)
         self.send_update_signal()
 
-    def send_update_signal(self):
+    def send_update_signal(self: Self) -> None:
         items_in_filter = []
         for item, selected in self.filter_items.items():
             if selected:
