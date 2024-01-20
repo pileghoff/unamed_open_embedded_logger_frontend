@@ -65,7 +65,8 @@ class TraceListWidget(QListView):
         scroll_bar = self.verticalScrollBar()
         self.model().sourceModel().scroll_follow = slider_value == scroll_bar.maximum()
 
-        if not self.model().sourceModel().scroll_follow and has_focus(self):
+        #if not self.model().sourceModel().scroll_follow and has_focus(self):
+        if not self.model().sourceModel().scroll_follow and self.parentWidget().underMouse():
             self.model().scrolled_to_index(self.indexAt(self.geometry().center()))
 
 
@@ -131,7 +132,8 @@ class TraceWidget(QWidget):
 
     @Slot(QModelIndex)
     def scoll_to_item(self: Self, index: QModelIndex) -> None:
-        if not has_focus(self):
+        #if not has_focus(self):
+        if not self.underMouse():
             self.log_view_widget.scrollTo(index)
 
     @Slot()
