@@ -1,4 +1,5 @@
 import sys
+import traceback
 from typing import Self
 
 import qtawesome as qta
@@ -91,9 +92,17 @@ class MainWindow(QMainWindow):
             w = w.parentWidget()
 
 
+def excepthook(cls, exception, tb):
+    logger.error(f"Exception: {exception}")
+    for l in traceback.format_exception(exception):
+        logger.error(l.strip("\n"))
+    exit(-1)
+
+
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = MainWindow()
     window.showMaximized()
     app.focusChanged.connect(window.focus_changed)
-    sys.exit(app.exec())
+    sys.excepthook = excepthook
+    app.exec()

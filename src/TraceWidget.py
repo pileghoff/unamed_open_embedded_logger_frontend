@@ -63,11 +63,15 @@ class TraceListWidget(QListView):
     @Slot(int)
     def user_scroll(self: Self, slider_value: int) -> None:
         scroll_bar = self.verticalScrollBar()
-        self.scroll_follow = slider_value == scroll_bar.maximum()
+        self.model().sourceModel().scroll_follow = slider_value == scroll_bar.maximum()
+
+        if not self.model().sourceModel().scroll_follow and has_focus(self):
+            self.model().scrolled_to_index(self.indexAt(self.geometry().center()))
+
 
     @Slot(QModelIndex, int, int)
     def scroll_update(self: Self, parent: QObject | None, start: int, end: int) -> None:
-        if self.scroll_follow:
+        if self.model().sourceModel().scroll_follow:
             self.scrollToBottom()
 
 
@@ -77,6 +81,7 @@ class TraceWidget(QWidget):
         self.setLayout(QHBoxLayout())
         self.trace_model = model
         self.trace_filtered_model = TraceFilter(model)
+        self.trace_filtered_model.view_scroll_to_index.connect(self.scoll_to_item)
 
         self.setMouseTracking(True)
 
@@ -123,6 +128,11 @@ class TraceWidget(QWidget):
         self.side_bar_hidden.setVisible(True)
         if restore_focus:
             self.setFocus()
+
+    @Slot(QModelIndex)
+    def scoll_to_item(self: Self, index: QModelIndex) -> None:
+        if not has_focus(self):
+            self.log_view_widget.scrollTo(index)
 
     @Slot()
     def check_mouse(self: Self) -> None:

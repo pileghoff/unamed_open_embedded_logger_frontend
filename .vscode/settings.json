@@ -14,7 +14,7 @@
     "editor.defaultFormatter": null,
     "editor.formatOnSave": true,
     "editor.codeActionsOnSave": {
-        "source.fixAll": true
+        "source.fixAll": "explicit"
     },
     "python.pythonPath": "python3.12",
     "python.defaultInterpreterPath": "python3.12"
