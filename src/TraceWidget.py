@@ -42,6 +42,7 @@ class TraceListWidget(QListView):
         self.verticalScrollBar().valueChanged.connect(self.user_scroll)
         model.rowsInserted.connect(self.scroll_update)
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        self.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
 
         self.setSelectionMode(QAbstractItemView.ExtendedSelection)
         self.setStyleSheet("font-family: monospace;")
@@ -65,7 +66,6 @@ class TraceListWidget(QListView):
         scroll_bar = self.verticalScrollBar()
         self.model().sourceModel().scroll_follow = slider_value == scroll_bar.maximum()
 
-        #if not self.model().sourceModel().scroll_follow and has_focus(self):
         if not self.model().sourceModel().scroll_follow and self.parentWidget().underMouse():
             self.model().scrolled_to_index(self.indexAt(self.geometry().center()))
 
@@ -132,9 +132,8 @@ class TraceWidget(QWidget):
 
     @Slot(QModelIndex)
     def scoll_to_item(self: Self, index: QModelIndex) -> None:
-        #if not has_focus(self):
         if not self.underMouse():
-            self.log_view_widget.scrollTo(index)
+            self.log_view_widget.scrollTo(index, hint = QAbstractItemView.ScrollHint.PositionAtCenter)
 
     @Slot()
     def check_mouse(self: Self) -> None:

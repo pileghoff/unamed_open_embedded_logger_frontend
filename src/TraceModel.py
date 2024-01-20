@@ -6,8 +6,10 @@ from essential_generators import DocumentGenerator
 from PySide6.QtCore import (
     QAbstractListModel,
     QModelIndex,
+    QObject,
     QPersistentModelIndex,
     Qt,
+    QThread,
     QTimer,
     Signal,
     Slot,
@@ -29,7 +31,7 @@ class TraceMessage:
     @classmethod
     def generate(cls: Type[Self]) -> Self:
         global current_time
-        current_time += randint(2,10)
+        current_time += 1
         return TraceMessage(
             str(randint(2, 5)),
             choice(modules),
@@ -41,17 +43,17 @@ class TraceMessage:
         return f"[{self.timestamp}] {self.message}"
 
 
-# class TraceWorker(QThread):
-#     more_data: Signal = Signal(list)
+class TraceWorker(QThread):
+    more_data: Signal = Signal(list)
 
-#     def __init__(self: Self, parent: QObject) -> None:
-#         super(TraceWorker, self).__init__()
+    def __init__(self: Self, parent: QObject) -> None:
+        super(TraceWorker, self).__init__()
 
-#     def run(self: Self) -> None:
-#         """Long-running task." that calls a separate class for computation"""
-#         while True:
-#             QThread.msleep(randint(50, 100))
-#             self.more_data.emit([TraceMessage.generate()])
+    def run(self: Self) -> None:
+        """Long-running task." that calls a separate class for computation"""
+        while True:
+            QThread.msleep(randint(2, 20))
+            self.more_data.emit([TraceMessage.generate()])
 
 
 class TraceModel(QAbstractListModel):
@@ -59,16 +61,16 @@ class TraceModel(QAbstractListModel):
 
     def __init__(self: Self) -> None:
         super(TraceModel, self).__init__()
-        self.logs: list[TraceMessage] = [TraceMessage.generate() for i in range(5000)]
+        self.logs: list[TraceMessage] = [TraceMessage.generate() for i in range(50000)]
         self.in_buffer: Queue = Queue()
-        #self.thread = TraceWorker(self)
-        #self.thread.more_data.connect(self.more_data)
-        #self.thread.start()
+        self.thread = TraceWorker(self)
+        self.thread.more_data.connect(self.more_data)
+        self.thread.start()
         self.modules = modules
 
         self.new_data_timer = QTimer(self)
         self.new_data_timer.timeout.connect(self.update_data)
-        self.new_data_timer.start(500)
+        self.new_data_timer.start(50)
 
         self.global_time = 0
         self.scroll_follow = True

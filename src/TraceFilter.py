@@ -1,6 +1,5 @@
 from typing import Self
 
-from loguru import logger
 from PySide6.QtCore import (
     QModelIndex,
     QPersistentModelIndex,
@@ -56,19 +55,21 @@ class TraceFilter(QSortFilterProxyModel):
     def global_time_updated(self: Self, timestamp: int) -> None:
         left = 0
         right = self.rowCount() - 1
+        row_count = self.rowCount()
         while left <= right:
             middle = (left+right) // 2
-            logger.warning(f"Attempt lookup at {middle}")
-            potentialMatch : TraceMessage = self.data(self.index(middle, 0), role = Qt.ItemDataRole.UserRole)
-            if timestamp == potentialMatch.timestamp:
+            potential_match : TraceMessage = self.data(self.index(middle, 0), role = Qt.ItemDataRole.UserRole)
+            if timestamp == potential_match.timestamp:
                 break
-            elif timestamp < potentialMatch.timestamp:
+            elif timestamp < potential_match.timestamp:
                 right = middle - 1
             else:
                 left = middle + 1
-        guess : TraceMessage = self.data(self.index(left, 0), role = Qt.ItemDataRole.UserRole)
-        logger.warning(f"Scroll to: {guess.timestamp}")
-        self.view_scroll_to_index.emit(self.index(left, 0))
+        if right < 0:
+            right = 0
+        guess : TraceMessage = self.data(self.index(right, 0), role = Qt.ItemDataRole.UserRole)
+        if guess is not None:
+            self.view_scroll_to_index.emit(self.index(right, 0))
 
 
 
