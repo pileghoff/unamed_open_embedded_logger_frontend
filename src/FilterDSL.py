@@ -43,12 +43,9 @@ class FilterDSLEvaluator(Transformer):
         (a,b) = exprs
         return a in b
 
-    def is_in_str(self, exprs: list[Tree]) -> bool:
+    def contains(self, exprs: list[Tree]) -> bool:
         (a,b) = exprs
-        return a in b
-
-    def matches(self, exprs: list[Tree]) -> bool:
-        raise RuntimeError("Not implemented")
+        return b in a
 
     def invert(self, exprs: list[Tree]) -> bool:
         return not exprs[0]
@@ -80,8 +77,8 @@ start: combine+
 invert: "not" expr
 
 comparison: name "eq" literal -> eq
-    | name "matches" STRING -> matches
-    | name "in" (list | STRING) -> is_in
+    | name "contains" STRING -> contains
+    | name "in" list -> is_in
 
 
 ?literal: STRING

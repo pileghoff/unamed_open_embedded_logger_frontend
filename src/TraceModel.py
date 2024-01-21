@@ -61,7 +61,7 @@ class TraceModel(QAbstractListModel):
 
     def __init__(self: Self) -> None:
         super(TraceModel, self).__init__()
-        self.logs: list[TraceMessage] = [TraceMessage.generate() for i in range(500)]
+        self.logs: list[TraceMessage] = [TraceMessage.generate() for i in range(50000)]
         self.in_buffer: Queue = Queue()
         self.thread = TraceWorker(self)
         self.thread.more_data.connect(self.more_data)

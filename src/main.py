@@ -17,6 +17,14 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(self.trace_tab)
         self.toolbar = self.addToolBar("Test")
 
+        add_tab_action = QAction(qta.icon("fa5s.columns"), "New tab", self)
+        add_tab_action.triggered.connect(self.add_tab)
+        self.toolbar.addAction(add_tab_action)
+
+        settings_action = QAction(qta.icon("fa5s.cogs"), "Settings", self)
+        settings_action.triggered.connect(self.open_settings)
+        self.toolbar.addAction(settings_action)
+
         connect_action = QAction(qta.icon("fa5s.plug"), "Setup connection", self)
         connect_action.triggered.connect(self.open_connect_dialog)
         self.toolbar.addAction(connect_action)
@@ -32,14 +40,6 @@ class MainWindow(QMainWindow):
         clear_log_action = QAction(qta.icon("fa5s.trash"), "Clear log", self)
         clear_log_action.triggered.connect(self.clear_log)
         self.toolbar.addAction(clear_log_action)
-
-        add_tab_action = QAction(qta.icon("fa5s.columns"), "New tab", self)
-        add_tab_action.triggered.connect(self.add_tab)
-        self.toolbar.addAction(add_tab_action)
-
-        settings_action = QAction(qta.icon("fa5s.cogs"), "Settings", self)
-        settings_action.triggered.connect(self.open_settings)
-        self.toolbar.addAction(settings_action)
 
         self.toolbar.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextUnderIcon)
         self.toolbar.setIconSize(QSize(150, 25))
