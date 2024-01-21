@@ -30,7 +30,6 @@ class TabWidget(QTabWidget):
         self.setMovable(True)
         self.tabCloseRequested.connect(self.remove_tab)
         self.currentChanged.connect(self.active_tab_changed)
-        self.setPalette(QColor.fromRgb(100, 100, 100, 0))
 
     def remove_tab(self: Self, index: int) -> None:
         super().removeTab(index)
@@ -63,18 +62,7 @@ class TabContainer(QSplitter):
         self.setAcceptDrops(True)
         self.highlight_area: QRubberBand | None = None
         self.handle_margin = QMargins(50, 0, 50, 0)
-        self.active_child = TabWidget()
-        self.addWidget(self.active_child)
-
-    def set_active_child(self: Self, child: TabWidget) -> None:
-        logger.info("Set active child")
-        if self.active_child == child:
-            return
-        self.active_child = child
-        for c in self.children():
-            c.setPalette(QColor.fromRgb(100, 100, 100, 0))
-
-        child.setPalette(QColor.fromRgb(200, 100, 100, 0))
+        self.addWidget(TabWidget())
 
     def set_all_tabs_same_width(self: Self) -> None:
         """
@@ -200,10 +188,10 @@ class TabContainer(QSplitter):
         for c in self.children():
             if isinstance(c, TabWidget):
                 if has_focus(c):
-                    self.active_child = c
-        index = self.active_child.addTab(widget, text)
-        self.active_child.tabBar().rename_tab(index)
-        self.active_child.setCurrentIndex(index)
+                    index = c.addTab(widget, text)
+                    c.tabBar().rename_tab(index)
+                    c.setCurrentIndex(index)
+                    return
 
 
 class TabContainerBar(QTabBar):

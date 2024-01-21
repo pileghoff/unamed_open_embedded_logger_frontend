@@ -1,23 +1,23 @@
 from typing import Self
 
-import qtawesome as qta
-from filter_selector import FilterWidget
+from FilterDSL import UnknownIdent
+from lark.exceptions import UnexpectedInput
 from loguru import logger
 from PySide6.QtCore import (
     QAbstractItemModel,
-    QMargins,
     QModelIndex,
     QObject,
     Qt,
-    QTimer,
     Signal,
     Slot,
 )
-from PySide6.QtGui import QCursor, QKeyEvent, QKeySequence
+from PySide6.QtGui import QKeyEvent, QKeySequence
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QApplication,
     QHBoxLayout,
+    QLabel,
+    QLineEdit,
     QListView,
     QSizePolicy,
     QVBoxLayout,
@@ -26,7 +26,6 @@ from PySide6.QtWidgets import (
 from TabContainer import TabContainer
 from TraceFilter import TraceFilter
 from TraceModel import TraceModel
-from utils import has_focus
 
 
 class TraceListWidget(QListView):
@@ -79,75 +78,58 @@ class TraceListWidget(QListView):
 class TraceWidget(QWidget):
     def __init__(self: Self, model: QAbstractItemModel) -> None:
         super().__init__()
-        self.setLayout(QHBoxLayout())
+        self.setLayout(QVBoxLayout())
         self.trace_model = model
         self.trace_filtered_model = TraceFilter(model)
         self.trace_filtered_model.view_scroll_to_index.connect(self.scoll_to_item)
 
         self.setMouseTracking(True)
 
-        # Side bar
-        self.side_bar_hidden = qta.IconWidget("fa5s.list")
-        self.side_bar = QWidget()
-        self.side_bar.setLayout(QVBoxLayout())
+        # Top
+        self.top = QWidget()
+        self.top.setLayout(QHBoxLayout())
+        self.layout().addWidget(self.top)
 
-        # Module filter widget
-        self.module_filter_widget = FilterWidget(self.trace_model.modules, "Modules")
-        self.module_filter_widget.filter_updated.connect(
-            self.trace_filtered_model.update_modules
-        )
-        self.module_filter_widget.update_items()
-        self.side_bar.layout().addWidget(self.module_filter_widget)
+        # Filter widget
+        self.filter_input_widget_container = QWidget()
+        self.filter_input_widget_container.setLayout(QVBoxLayout())
+        self.filter_input_widget = QLineEdit()
+        self.filter_input_widget.editingFinished.connect(self.update_filter)
+        self.filter_error_message = QLabel()
+        self.filter_input_widget_container.layout().addWidget(self.filter_input_widget)
+        self.filter_input_widget_container.layout().addWidget(self.filter_error_message)
+        self.top.layout().addWidget(self.filter_input_widget_container)
 
-        # Task filter widget
-        self.task_filter_widget = FilterWidget([str(i) for i in range(2, 5)], "Tasks")
-        self.task_filter_widget.filter_updated.connect(
-            self.trace_filtered_model.update_tasks
-        )
-        self.task_filter_widget.update_items()
-        self.side_bar.layout().addWidget(self.task_filter_widget)
+        # Format widget
+        self.format_input_widget = QLineEdit()
+        self.format_input_widget.setText(self.trace_filtered_model.format)
+        self.format_input_widget.editingFinished.connect(self.update_format)
+        self.top.layout().addWidget(self.format_input_widget)
 
         # Build log
         self.log_view_widget = TraceListWidget(self.trace_filtered_model)
 
         self.layout().addWidget(self.log_view_widget, stretch=2)
-        self.layout().addWidget(self.side_bar)
-        self.layout().addWidget(self.side_bar_hidden)
-        self.hide_sidebar()
 
-        check_hover_timer = QTimer(self)
-        check_hover_timer.timeout.connect(self.check_mouse)
-        check_hover_timer.start(100)
+    @Slot()
+    def update_format(self: Self) -> None:
+        self.trace_filtered_model.update_format(self.format_input_widget.text())
 
-    def show_sidebar(self: Self) -> None:
-        self.side_bar_hidden.setVisible(False)
-        self.side_bar.setVisible(True)
+    @Slot()
+    def update_filter(self: Self) -> None:
+        self.filter_error_message.setText("")
+        try:
+            self.trace_filtered_model.update_filter(self.filter_input_widget.text())
+        except UnexpectedInput as e:
+            self.filter_error_message.setText(e.get_context(self.filter_input_widget.text()))
+        except UnknownIdent as e:
+            self.filter_error_message.setText(f"Unknown identifier {e.ident}")
 
-    def hide_sidebar(self: Self) -> None:
-        restore_focus = has_focus(self)
-        self.side_bar.setVisible(False)
-        self.side_bar_hidden.setVisible(True)
-        if restore_focus:
-            self.setFocus()
 
     @Slot(QModelIndex)
     def scoll_to_item(self: Self, index: QModelIndex) -> None:
         if not self.underMouse():
             self.log_view_widget.scrollTo(index, hint = QAbstractItemView.ScrollHint.PositionAtCenter)
-
-    @Slot()
-    def check_mouse(self: Self) -> None:
-        cursor = QCursor()
-        pos = self.mapFromGlobal(cursor.pos())
-        if self.side_bar.isVisible():
-            rect = self.side_bar.geometry() + QMargins(20, 0, 10, 0)
-            if not rect.contains(pos):
-                self.hide_sidebar()
-        else:
-            if (
-                pos - self.side_bar_hidden.geometry().center()
-            ).manhattanLength() < self.side_bar_hidden.geometry().width():
-                self.show_sidebar()
 
 
 
@@ -158,20 +140,11 @@ class TraceTab(QWidget):
         self.setLayout(QHBoxLayout())
         self.tab_widget = TabContainer()
         self.layout().addWidget(self.tab_widget)
-
-        self.active_child = TraceWidget(self.trace_model)
-        self.tab_widget.addTab(self.active_child, "Tab")
+        self.tab_widget.addTab( TraceWidget(self.trace_model), "Tab")
 
 
     def addTab(self: Self) -> None:  # noqa: N802
         logger.info("Add new tab")
-        self.active_child = TraceWidget(self.trace_model)
-        self.tab_widget.addTab(self.active_child, "New tab")
+        self.tab_widget.addTab(TraceWidget(self.trace_model), "New tab")
 
-    def set_active_child(self: Self, child: TraceWidget) -> None:
-        if child == self.active_child:
-            # do nothing
-            return
-
-        self.active_child = child
 

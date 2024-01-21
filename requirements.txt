@@ -6,3 +6,4 @@ QtPy==2.4.1
 loguru==0.7.2
 essential_generators==1.0
 PySide6-stubs==6.4.2.0 
+Lark==1.1.9 

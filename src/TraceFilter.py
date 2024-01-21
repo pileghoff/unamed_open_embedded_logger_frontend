@@ -1,5 +1,6 @@
-from typing import Self
+from typing import Any, Self
 
+from FilterDSL import FilterDSL
 from PySide6.QtCore import (
     QModelIndex,
     QPersistentModelIndex,
@@ -16,10 +17,16 @@ class TraceFilter(QSortFilterProxyModel):
 
     def __init__(self: Self, model: TraceModel) -> None:
         super(TraceFilter, self).__init__()
-        self.task_ids: set[str] = set()
-        self.modules: set[str] = set()
+        self.filter: FilterDSL | None = None
+        self.format: str = "[{timestamp}][{module:10}] : {message}"
         self.setSourceModel(model)
         model.global_time_updated.connect(self.global_time_updated)
+
+    def data(self: Self, index: QModelIndex, role: Qt.ItemDataRole | None = None) -> Any:
+        if role == Qt.ItemDataRole.DisplayRole:
+            item : TraceMessage = super().data(index, Qt.ItemDataRole.UserRole)
+            return self.format.format_map(item.__dict__)
+        return super().data(index, role)
 
     def sourceModel(self: Self) -> TraceModel:  # noqa: N802
         model = super().sourceModel()
@@ -31,19 +38,25 @@ class TraceFilter(QSortFilterProxyModel):
                          source_parent: QModelIndex | QPersistentModelIndex) -> bool:
         if source_row >= len(self.sourceModel().logs):
             return False
-        log = self.sourceModel().logs[source_row]
-        return log.task_id in self.task_ids and log.module in self.modules
 
-    @Slot(list)
-    def update_modules(self: Self, modules: list[str]) -> None:
+        if self.filter is None:
+            return True
+
+        log = self.sourceModel().logs[source_row]
+        return self.filter.eval(log.__dict__)
+
+    def update_filter(self: Self, new_filter: str) -> None:
+        new_model = None
+        if new_filter.strip() != "":
+            new_model = FilterDSL(new_filter)
+            new_model.eval(self.sourceModel().logs[0].__dict__)
         self.beginResetModel()
-        self.modules = set(modules)
+        self.filter = new_model
         self.endResetModel()
 
-    @Slot(list)
-    def update_tasks(self: Self, tasks: list[str]) -> None:
+    def update_format(self: Self, new_format:str) -> None:
         self.beginResetModel()
-        self.task_ids = set(tasks)
+        self.format = new_format
         self.endResetModel()
 
     @Slot(QModelIndex)
@@ -55,7 +68,6 @@ class TraceFilter(QSortFilterProxyModel):
     def global_time_updated(self: Self, timestamp: int) -> None:
         left = 0
         right = self.rowCount() - 1
-        row_count = self.rowCount()
         while left <= right:
             middle = (left+right) // 2
             potential_match : TraceMessage = self.data(self.index(middle, 0), role = Qt.ItemDataRole.UserRole)
@@ -70,12 +82,3 @@ class TraceFilter(QSortFilterProxyModel):
         guess : TraceMessage = self.data(self.index(right, 0), role = Qt.ItemDataRole.UserRole)
         if guess is not None:
             self.view_scroll_to_index.emit(self.index(right, 0))
-
-
-
-
-
-
-
-# How to do this as a binary search
-# We have a row count

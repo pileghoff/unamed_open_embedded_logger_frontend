@@ -6,9 +6,8 @@ import qtawesome as qta
 from loguru import logger
 from PySide6.QtCore import QSize, Qt, Slot
 from PySide6.QtGui import QAction
-from PySide6.QtWidgets import QApplication, QMainWindow, QWidget
-from TabContainer import TabContainer, TabWidget
-from TraceWidget import TraceTab, TraceWidget
+from PySide6.QtWidgets import QApplication, QMainWindow
+from TraceWidget import TraceTab
 
 
 class MainWindow(QMainWindow):
@@ -71,27 +70,6 @@ class MainWindow(QMainWindow):
     def open_settings(self: Self) -> None:
         logger.info("Open settings")
 
-    @Slot(bool)
-    def focus_changed(self: Self, old: QWidget, new: QWidget) -> None:
-        # Set the active child of the draggable split
-        if new is None:
-            return
-        w = new
-
-        child_tab = None
-        while not isinstance(w, MainWindow):
-            logger.info(type(w))
-            if isinstance(w, TraceWidget):
-                self.trace_tab.set_active_child(w)
-            if isinstance(w, TabWidget):
-                child_tab = w
-            if isinstance(w, TabContainer):
-                if child_tab is not None:
-                    w.set_active_child(child_tab)
-
-            w = w.parentWidget()
-
-
 def excepthook(cls, exception, tb):
     logger.error(f"Exception: {exception}")
     for l in traceback.format_exception(exception):
@@ -103,6 +81,5 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = MainWindow()
     window.showMaximized()
-    app.focusChanged.connect(window.focus_changed)
     sys.excepthook = excepthook
     app.exec()
