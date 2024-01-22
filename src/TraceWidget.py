@@ -5,8 +5,8 @@ from lark.exceptions import UnexpectedInput
 from loguru import logger
 from PySide6.QtCore import (
     QAbstractItemModel,
+    QItemSelection,
     QModelIndex,
-    QObject,
     Qt,
     Signal,
     Slot,
@@ -35,7 +35,6 @@ class TraceListWidget(QListView):
         super().__init__()
         self.setModel(model)
 
-        self.scroll_follow = True
         self.setUniformItemSizes(True)
 
         self.verticalScrollBar().valueChanged.connect(self.user_scroll)
@@ -45,6 +44,7 @@ class TraceListWidget(QListView):
 
         self.setSelectionMode(QAbstractItemView.ExtendedSelection)
         self.setStyleSheet("font-family: monospace;")
+        self.scroll_follow = True
 
     def keyPressEvent(self: Self, event: QKeyEvent) -> None:  # noqa: N802
         super().keyPressEvent(event)
@@ -63,15 +63,18 @@ class TraceListWidget(QListView):
     @Slot(int)
     def user_scroll(self: Self, slider_value: int) -> None:
         scroll_bar = self.verticalScrollBar()
-        self.model().sourceModel().scroll_follow = slider_value == scroll_bar.maximum()
+        self.scroll_follow = slider_value == scroll_bar.maximum()
 
-        if not self.model().sourceModel().scroll_follow and self.parentWidget().underMouse():
-            self.model().scrolled_to_index(self.indexAt(self.geometry().center()))
+    def selectionChanged(self: Self, selected: QItemSelection, deselected: QItemSelection) -> None:
+        super().selectionChanged(selected, deselected)
 
+        if len(selected) > 0:
+            i:QModelIndex = selected[0].indexes()[0]
+            self.model().scrolled_to_index(i)
 
     @Slot(QModelIndex, int, int)
-    def scroll_update(self: Self, parent: QObject | None, start: int, end: int) -> None:
-        if self.model().sourceModel().scroll_follow:
+    def scroll_update(self, parent: QModelIndex, first:int, last:int) -> None:
+        if self.scroll_follow:
             self.scrollToBottom()
 
 
@@ -130,6 +133,7 @@ class TraceWidget(QWidget):
     def scoll_to_item(self: Self, index: QModelIndex) -> None:
         if not self.underMouse():
             self.log_view_widget.scrollTo(index, hint = QAbstractItemView.ScrollHint.PositionAtCenter)
+            self.log_view_widget.setCurrentIndex(index)
 
 
 

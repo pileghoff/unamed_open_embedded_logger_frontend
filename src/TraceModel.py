@@ -42,6 +42,8 @@ class TraceMessage:
     def __str__(self: Self) -> str:
         return f"[{self.timestamp}] {self.message}"
 
+    def __lt__(self, other):
+        return self.timestamp < other.timestamp
 
 class TraceWorker(QThread):
     more_data: Signal = Signal(list)
@@ -60,8 +62,11 @@ class TraceModel(QAbstractListModel):
     global_time_updated = Signal(int)
 
     def __init__(self: Self) -> None:
+        print("New trace model")
         super(TraceModel, self).__init__()
-        self.logs: list[TraceMessage] = [TraceMessage.generate() for i in range(50000)]
+        self.logs: list[TraceMessage] = []
+        for i in range(50000):
+            self.logs.append(TraceMessage.generate())
         self.in_buffer: Queue = Queue()
         self.thread = TraceWorker(self)
         self.thread.more_data.connect(self.more_data)
@@ -73,7 +78,6 @@ class TraceModel(QAbstractListModel):
         self.new_data_timer.start(50)
 
         self.global_time = 0
-        self.scroll_follow = True
 
 
     def timestamp_at_index(self: Self, index: QModelIndex) -> int:

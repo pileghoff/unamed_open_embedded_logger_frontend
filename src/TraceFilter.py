@@ -20,6 +20,7 @@ class TraceFilter(QSortFilterProxyModel):
         self.filter: FilterDSL | None = None
         self.format: str = "[{timestamp}][{module:10}] : {message}"
         self.setSourceModel(model)
+        self.setDynamicSortFilter(False)
         model.global_time_updated.connect(self.global_time_updated)
 
     def data(self: Self, index: QModelIndex, role: Qt.ItemDataRole | None = None) -> Any:
@@ -55,9 +56,7 @@ class TraceFilter(QSortFilterProxyModel):
         self.endResetModel()
 
     def update_format(self: Self, new_format:str) -> None:
-        self.beginResetModel()
         self.format = new_format
-        self.endResetModel()
 
     @Slot(QModelIndex)
     def scrolled_to_index(self: Self, index: QModelIndex) -> None:
