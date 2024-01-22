@@ -26,7 +26,10 @@ class TraceFilter(QSortFilterProxyModel):
     def data(self: Self, index: QModelIndex, role: Qt.ItemDataRole | None = None) -> Any:
         if role == Qt.ItemDataRole.DisplayRole:
             item : TraceMessage = super().data(index, Qt.ItemDataRole.UserRole)
-            return self.format.format_map(item.__dict__)
+            try:
+                return self.format.format_map(item)
+            except ValueError as e:
+                return str(e)
         return super().data(index, role)
 
     def sourceModel(self: Self) -> TraceModel:  # noqa: N802

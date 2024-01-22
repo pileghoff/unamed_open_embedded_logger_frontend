@@ -45,6 +45,12 @@ class TraceMessage:
     def __lt__(self, other):
         return self.timestamp < other.timestamp
 
+    def __getitem__(self, key):
+        if key in self.__dict__:
+            return self.__dict__[key]
+
+        return f"<< Unknown key {key} >>"
+
 class TraceWorker(QThread):
     more_data: Signal = Signal(list)
 
